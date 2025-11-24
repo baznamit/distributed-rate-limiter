@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Limiter Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .dashboard-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .card { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: none; }
+        .metric-card { border-left: 4px solid #007bff; }
+        .blocked-card { border-left: 4px solid #dc3545; }
+        .allowed-card { border-left: 4px solid #28a745; }
+        .status-badge { font-size: 0.8rem; }
+        .refresh-btn { position: fixed; bottom: 20px; right: 20px; }
+        .algorithm-badge { font-size: 0.7rem; margin-left: 5px; }
+        .client-row { cursor: pointer; transition: background-color 0.2s; }
+        .client-row:hover { background-color: #f1f3f4; }
+        .loading { opacity: 0.6; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="dashboard-header p-4 mb-4">
+        <div class="container">
+            <h1><i class="fas fa-tachometer-alt me-2"></i>Rate Limiter Dashboard</h1>
+            <p class="mb-0">Real-time monitoring and management of distributed rate limiting</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Status Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">System Status</h6>
+                                <h4 id="system-status" class="card-title">
+                                    <span class="badge bg-secondary status-badge">Checking...</span>
+                                </h4>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-heartbeat fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card allowed-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Active Clients</h6>
+                                <h4 id="active-clients" class="card-title">0</h4>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-users fa-2x text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card blocked-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Blocked IPs</h6>
+                                <h4 id="blocked-count" class="card-title">0</h4>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-ban fa-2x text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="card-subtitle mb-2 text-muted">Requests/Min</h6>
+                                <h4 id="requests-per-min" class="card-title">0</h4>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-chart-line fa-2x text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm Comparison -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cogs me-2"></i>Algorithm Performance Comparison</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-center p-3 border rounded">
+                                    <h6>Fixed Window <span class="badge bg-warning algorithm-badge">Basic</span></h6>
+                                    <div id="fixed-stats">
+                                        <div>Requests: <span id="fixed-count">0</span></div>
+                                        <div>Status: <span id="fixed-status" class="badge bg-secondary">Unknown</span></div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="testAlgorithm('fixed')">
+                                        <i class="fas fa-play"></i> Test
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3 border rounded">
+                                    <h6>Atomic Fixed <span class="badge bg-info algorithm-badge">Race-Safe</span></h6>
+                                    <div id="atomic-stats">
+                                        <div>Requests: <span id="atomic-count">0</span></div>
+                                        <div>Status: <span id="atomic-status" class="badge bg-secondary">Unknown</span></div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-info mt-2" onclick="testAlgorithm('atomic')">
+                                        <i class="fas fa-play"></i> Test
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3 border rounded">
+                                    <h6>Sliding Window <span class="badge bg-success algorithm-badge">Smooth</span></h6>
+                                    <div id="sliding-stats">
+                                        <div>Requests: <span id="sliding-count">0</span></div>
+                                        <div>Status: <span id="sliding-status" class="badge bg-secondary">Unknown</span></div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-success mt-2" onclick="testAlgorithm('sliding')">
+                                        <i class="fas fa-play"></i> Test
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Traffic Table -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-network-wired me-2"></i>Live Traffic Monitor</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshData()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="clearAllLimits()">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Client IP</th>
+                                        <th>Algorithm</th>
+                                        <th>Requests</th>
+                                        <th>Remaining</th>
+                                        <th>Status</th>
+                                        <th>Last Request</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="traffic-table">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            <i class="fas fa-spinner fa-spin me-2"></i>Loading traffic data...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual IP Management -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-shield-alt me-2"></i>IP Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <form onsubmit="banIP(event)">
+                            <div class="mb-3">
+                                <label class="form-label">Ban IP Address</label>
+                                <div class="input-group">
+                                    <input type="text" id="ban-ip-input" class="form-control" 
+                                           placeholder="192.168.1.100" pattern="[0-9.]+" required>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-ban"></i> Ban
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <div id="banned-ips">
+                            <h6>Currently Banned IPs:</h6>
+                            <div id="banned-list" class="mt-2">
+                                <span class="badge bg-secondary">No banned IPs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tools me-2"></i>Admin Tools</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-warning" onclick="resetAllClients()">
+                                <i class="fas fa-undo"></i> Reset All Rate Limits
+                            </button>
+                            <button class="btn btn-info" onclick="simulateLoad()">
+                                <i class="fas fa-bolt"></i> Simulate Load Test
+                            </button>
+                            <button class="btn btn-success" onclick="exportLogs()">
+                                <i class="fas fa-download"></i> Export Logs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Refresh Button -->
+    <button class="btn btn-primary refresh-btn rounded-circle" onclick="refreshData()" title="Auto-refresh every 5 seconds">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Dashboard JavaScript -->
+    <script src="dashboard.js"></script>
+</body>
+</html>

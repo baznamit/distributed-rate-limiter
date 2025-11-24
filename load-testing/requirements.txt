@@ -1,0 +1,3 @@
+# Load Testing Requirements
+locust==2.32.4
+requests==2.31.0
