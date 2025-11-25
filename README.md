@@ -1,18 +1,18 @@
-# 🔥 Distributed Rate Limiter
+# Distributed Rate Limiter
 
 A comprehensive, production-ready distributed rate limiting system built with **FastAPI**, **Redis**, and modern web technologies. This project implements multiple rate limiting algorithms with race condition safety, real-time monitoring, and comprehensive load testing.
 
-## 🚀 Project Overview
+## Project Overview
 
 This project demonstrates a complete rate limiting solution that progresses through 7 key phases:
 
-1. **✅ Basic Setup** - FastAPI server with Redis connection
-2. **✅ Fixed Window Algorithm** - Simple request counting per time window  
-3. **✅ Race Condition Solution** - Atomic operations using Lua scripting
-4. **✅ Middleware Integration** - Reusable FastAPI middleware
-5. **✅ Sliding Window Upgrade** - Smooth rate limiting with Redis ZSET
-6. **✅ Real-time Dashboard** - Live monitoring and admin interface
-7. **✅ Load Testing** - Comprehensive performance validation with Locust
+1. **Basic Setup** - FastAPI server with Redis connection
+2. **Fixed Window Algorithm** - Simple request counting per time window  
+3. **Race Condition Solution** - Atomic operations using Lua scripting
+4. **Middleware Integration** - Reusable FastAPI middleware
+5. **Sliding Window Upgrade** - Smooth rate limiting with Redis ZSET
+6. **Real-time Dashboard** - Live monitoring and admin interface
+7. **Load Testing** - Comprehensive performance validation with Locust
 
 ## 🎯 Key Features
 
@@ -34,23 +34,6 @@ This project demonstrates a complete rate limiting solution that progresses thro
 - **Rich Documentation**: Comprehensive guides and examples
 - **Easy Deployment**: Docker-ready with environment configuration
 - **Debug Tools**: Health checks, metrics, and logging
-
-## Project Structure
-
-```
-distributed-rate-limiter/
-├── backend/
-│   ├── app/
-│   │   ├── rate_limiter/
-│   │   ├── main.py
-│   │   ├── config.py
-│   │   └── database.py
-│   ├── tests/
-│   └── requirements.txt
-├── frontend/
-├── load-testing/
-└── README.md
-```
 
 ## Quick Start
 
@@ -144,6 +127,8 @@ python run_test_scenarios.py
 ```
 
 ## 🏗️ Architecture
+
+![Rate Limiter Architecture](assets/Architecture_RateLimiter.jpg)
 
 ### Rate Limiting Flow
 1. **Request arrives** at FastAPI endpoint
